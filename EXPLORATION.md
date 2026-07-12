@@ -1,6 +1,34 @@
 # HLK-7688A OpenWrt 24.10 SD 回归探索记录
 
-> **归档项目**。SD 未解决（mainline mtk-sd 驱动回归），主线移植已转 22.03.5（SD 工作）。
+> **2026-07-12 突破**：找到 24.10 可行解法 —— 切换到 OpenWrt 已内置的私有 mtk-mmc 驱动（`kmod-sdhci-mt7620`），已验证 6.6 编译，待设备验证 SD 枚举。原"SD 未解决"结论已更新。详见下方「🎯 突破」。
+
+## 🎯 2026-07-12 突破：切换私有 mtk-mmc 驱动（可行解法，待设备验证）
+
+**根因精确化**：不是"mainline mtk-sd CMD 回归修不了"，而是 **24.10 默认选错了驱动**。OpenWrt 在 `target/linux/ramips/modules.mk` 定义了**两个互斥 kmod 包**：
+- `kmod-mmc-mtk`（line 7-26）：mainline mtk-sd（`CONFIG_MMC_MTK`，`mtk-sd.ko`）—— **对 MT7628 SD 有 CMD 通信回归**（issue #21879 上游 2026-07 仍 open）
+- `kmod-sdhci-mt7620`（line 47-61）：22.03 的私有 mtk-mmc（`CONFIG_MTK_MMC`，`mtk-mmc/mtk_sd.ko`，John Crispin Ralink SDK）—— **22.03 验证工作**，`CONFLICTS:=kmod-mmc-mtk` 官方标注互斥
+
+24.10 默认用 kmod-mmc-mtk（坏）。私有驱动源码早已由 `patches-6.6/830` apply 到内核，只是 kmod 包没启用。
+
+**解法**（OpenWrt 官方支持，已实施）：
+1. `.config` 切包：`CONFIG_PACKAGE_kmod-sdhci-mt7620=y` + `# CONFIG_PACKAGE_kmod-mmc-mtk is not set`（CONFLICTS 自动处理）
+2. `dts/mt7628an_hilink_hlk-7688a.dts` 的 `&sdhci`：`compatible = "ralink,mt7620-sdhci"`（override dtsi，让私有驱动 of_match probe）
+3. `make target/linux/compile` —— OpenWrt 据 kmod-sdhci-mt7620 自动设 `CONFIG_MTK_MMC=m` + `MTK_AEE_KDUMP=n` + `MTK_MMC_CD_POLL=n`
+
+**坑（踩过的）**：
+- 别手动在 config-6.6 设 `CONFIG_MTK_MMC=y` —— 漏 `MTK_AEE_KDUMP` 子选项 → syncconfig 遇 NEW 失败。必须走 kmod 包机制。
+- 别只改 config-6.6 的 `# CONFIG_MMC_MTK is not set` —— 被 modules.mk 的 kmod-mmc-mtk 包 KCONFIG 覆盖。必须禁 `.config` 的 `CONFIG_PACKAGE_kmod-mmc-mtk`。
+- mainline `mtk-sd.ko` 与私有 `mtk_sd.ko` 内核模块名都是 `mtk_sd`，不能共存（platform driver name 不同：mainline `mtk-msdc` vs 私有 `mtk-sd`）。
+
+**已验证**：私有驱动 6.6 编译成功（`mtk_sd.ko` 377KB，vermagic `6.6.73 MIPS32_R2 32BIT` 匹配）。依赖 `!MTD_NAND_RALINK` 满足，`CONFIG_SOC_MT7620=y`，`ralink_regs.h` 在。Fix#4 的 831-01 tuning 值（PAD_TUNE=0x84101010）正是抄自此私有驱动 sd.c —— 旁证它是工作源头。
+
+**待验证**：bootm initramfs 看 `/dev/mmcblk0` 是否出现（需设备）。备选热替换：`bin/targets/ramips/mt76x8/mtk_sd.private.ko`（设备上 unbind mtk-msdc + rmmod mtk_sd + insmod）。
+
+---
+
+## 原探索记录（mainline mtk-sd 路径，仍作参考）
+
+> 原归档声明：SD 未解决（mainline mtk-sd 驱动回归），主线移植已转 22.03.5（SD 工作）。
 > 本文档记录 24.10 探索全过程，供将来升级 24.10 或理解回归时参考。
 
 ## 探索结论

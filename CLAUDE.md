@@ -65,7 +65,8 @@ make target/linux/refresh        # 用 quilt 刷新已 apply 的 patch（交互�
   - `831-01/02/03-*` — 社区 Fix#4（Shiji Yang 2025-06：tuning / 禁 CMD23 / PATCH_BIT 默认值），只修传输层，不够不着 CMD 通信。
   - `999-mmc-msdc-debug.patch` — 临时 `MSDC-DBG` printk（CMD/IRQ），**compile 产物带，但未确认进 initramfs image**。
 - **DTS 调整**（`mt7628an_hilink_hlk-7688a.dts` 的 `&sdhci`）：`no-1-8-v` + `vqmmc-supply = <&mmc_reg_3v3>` + `broken-cd`。
-- **状态**：SD 在 24.10 **未解决**，主线 SD 工作已转 22.03.5（私有 `mtk-mmc` 驱动在同设备同卡工作正常）。
+- **🎯 2026-07-12 突破（状态更新）**：找到 24.10 可行解法 —— 切换到 OpenWrt 内置的私有 mtk-mmc 驱动（`kmod-sdhci-mt7620`，`target/linux/ramips/modules.mk` 已定义，`CONFLICTS:=kmod-mmc-mtk`），替代坏的 mainline mtk-sd。私有驱动源码早由 `patches-6.6/830` apply，只是 kmod 包没启用。已验证 6.6 编译（`mtk_sd.ko` vermagic 匹配）+ defconfig 同步（`.config`: `MTK_MMC=m`/`MMC_MTK off`），待设备验证 SD 枚举。详见 `EXPLORATION.md` 突破章节。改动：`mt76x8.mk`（HLK-7688A `DEVICE_PACKAGES += kmod-sdhci-mt7620`）+ DTS（`&sdhci` `compatible = "ralink,mt7620-sdhci"` override）。
+- **坑**：① 别手动设 `CONFIG_MTK_MMC`（漏 `MTK_AEE_KDUMP` 子选项 → syncconfig 失败），走 kmod 包机制；② 别只改 config-6.6 的 `# CONFIG_MMC_MTK is not set`（被 `modules.mk` 的 kmod-mmc-mtk 包覆盖），要改 `.config` 的 `CONFIG_PACKAGE_kmod-mmc-mtk` 或 device profile；③ mainline `mtk-sd.ko` 与私有 `mtk_sd.ko` 模块名都是 `mtk_sd`，不能共存。
 
 ### initramfs 调试流程（U-Boot 1.1.3，关键陷阱）
 
@@ -73,6 +74,6 @@ make target/linux/refresh        # 用 quilt 刷新已 apply 的 patch（交互�
 - `Checksum OK` = 镜像完整；`LZMA ERROR 1` 是解压环节问题，先查加载地址，别怀疑固件。
 - **绝不能用 U-Boot Option 2/5 烧 flash**：`raspi_erase` 长循环不喂看门狗，稳定在第 13 个 64KB block 复位（教训 #5）。持久化走**系统内 `mtd write`**（Linux 喂狗正常）。
 
-### ⚠ 构建环境当前损坏（未修复）
+### 构建环境（2026-07-12 已恢复）
 
-上次调试时 `build_dir/target-mipsel_24kc_musl` 被 `rm -rf`，连带删了 package 产物 + stamp，导致 `make target/linux/install` 系统性失败（opkg lock、装不上内核模块）。`999` patch 的 printk 未能确认进 image 是因此阻塞。修复需 `make` 全量重建 target（~30min）或 `make dirclean`（~1h）。清缓存要**精准**，别 `rm -rf build_dir/target-*`（教训 #8）。
+之前 `rm -rf build_dir/target-*` 导致的损坏已恢复：package 产物（58 ipk）、opkg 工具、root.orig-ramips 均齐全，`make target/linux/install` 前置条件满足。教训仍有效：清缓存要**精准**，别 `rm -rf build_dir/target-*`（教训 #8）。全量内核编译（clean 后）> 10min，超后台 timeout，需多次续编或前台分步。

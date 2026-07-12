@@ -136,6 +136,7 @@
 };
 
 &sdhci {
+	compatible = "ralink,mt7620-sdhci";  /* override dtsi: 用私有 mtk-mmc 驱动 (22.03 工作), 不用 mainline mtk-sd */
 	status = "okay";
 	broken-cd;            /* CD 引脚悬空, mainline 驱动 mmc_of_parse 读 */
 	no-1-8-v;             /* MT7688 SD 只 3.3V 信号, 禁止 UHS 1.8V 切换 (根因: signal voltage 1.8V 切换失败致卡 stuck) */
