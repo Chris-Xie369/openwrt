@@ -134,3 +134,10 @@
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 };
+
+&sdhci {
+	status = "okay";
+	broken-cd;            /* CD 引脚悬空, mainline 驱动 mmc_of_parse 读 */
+	no-1-8-v;             /* MT7688 SD 只 3.3V 信号, 禁止 UHS 1.8V 切换 (根因: signal voltage 1.8V 切换失败致卡 stuck) */
+	vqmmc-supply = <&mmc_reg_3v3>;  /* 信号电压改 3.3V, 覆盖 dtsi 的 mmc_reg_1v8 */
+};
