@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenWrt HLK-7688A SD debug
+Date: Sun, 13 Jul 2026 23:15:00 +0800
+Subject: [PATCH] mmc: core: skip SD ext reg probe for MT7628/MT7688 mtk-mmc
+
+The SD 7.0 extension register probe (sd_read_ext_regs, new in v6.6)
+issues CMD48 with a 512-byte data transfer.  The MT7628/MT7688 private
+mtk-mmc DMA engine cannot complete this transfer (xfer_done timeout,
+error -145 / -ETIMEDOUT), which aborts SD card enumeration before
+/dev/mmcblk0 appears.
+
+Clear SD_SCR_CMD48_SUPPORT during SCR decode so sd_read_ext_regs()
+returns early via its existing check.  This exactly matches pre-6.6
+kernels (e.g. 5.10 / OpenWrt 22.03) where the probe did not exist and
+the SD card enumerated fine.  Only optional SD 7.0 extension features
+(power management, cache, performance registers) are lost; normal block
+I/O is unaffected.
+
+Root cause 2 of the HLK-7688A 24.10 SD regression (root cause 1, the
+missing AGPIO_CFG EPHY digital-mode setup, is fixed separately in the
+mtk-mmc driver source).
+
+Signed-off-by: Chris <chris@local>
+---
+ drivers/mmc/core/sd.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -245,6 +245,15 @@ static int mmc_decode_scr(struct mmc_car
+ 	else if (scr->sda_spec3)
+ 		scr->cmds = UNSTUFF_BITS(resp, 32, 2);
+
++	/*
++	 * The SD extension register probe (CMD48) issues a 512-byte data
++	 * transfer that the MT7628/MT7688 mtk-mmc DMA engine cannot complete
++	 * (xfer_done timeout).  Clear CMD48 support so sd_read_ext_regs() bails
++	 * out via its existing check, matching pre-6.6 kernels where the probe
++	 * did not exist.  Only optional SD 7.0 extension features (power
++	 * management, cache) are lost; the card remains usable as a block device.
++	 */
++	scr->cmds &= ~SD_SCR_CMD48_SUPPORT;
+ 	/* SD Spec says: any SD Card shall set at least bits 0 and 2 */
+ 	if (!(scr->bus_widths & SD_SCR_BUS_WIDTH_1) ||
+ 	    !(scr->bus_widths & SD_SCR_BUS_WIDTH_4)) {

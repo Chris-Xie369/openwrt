@@ -2210,6 +2210,12 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	struct msdc_hw *hw;
 	int ret;
 
+	//FIXME: this should be done by pinconf and not by the sd driver
+	if ((ralink_soc == MT762X_SOC_MT7688 ||
+	     ralink_soc == MT762X_SOC_MT7628AN) &&
+	    (!(rt_sysc_r32(0x60) & BIT(15))))
+		rt_sysc_m32(0xf << 17, 0xf << 17, 0x3c);
+
 	hw = &msdc0_hw;
 
 	if (of_property_read_bool(pdev->dev.of_node, "mtk,wp-en"))
@@ -2236,6 +2242,8 @@ static int msdc_drv_probe(struct platform_device *pdev)
 
 	//TODO: read this as bus-width from dt (via mmc_of_parse)
 	mmc->caps  |= MMC_CAP_4_BIT_DATA;
+	/* SD-only slot: skip SDIO/MMC bus scan so the core probes SD directly. */
+	mmc->caps2 |= MMC_CAP2_NO_SDIO | MMC_CAP2_NO_MMC;
 
 	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "cd-inverted");
 

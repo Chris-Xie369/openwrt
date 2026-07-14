@@ -136,9 +136,25 @@
 };
 
 &sdhci {
-	compatible = "ralink,mt7620-sdhci";  /* override dtsi: 用私有 mtk-mmc 驱动 (22.03 工作), 不用 mainline mtk-sd */
+	/* 完全匹配 22.03 极简（22.03 SD 工作的配置）：
+	 * 删 24.10 dtsi 为 mainline mtk-sd 加的所有属性，回 22.03 的极简 sdhci。
+	 * 私有驱动不调 mmc_of_parse，但 pinctrl-names 的 "state_uhs" + 已删的 pinctrl-1
+	 * 可能让 driver core/pinctrl 异常；broken-cd 同理不被私有驱动解析。一并清理。 */
+	/delete-property/ bus-width;
+	/delete-property/ cap-mmc-highspeed;
+	/delete-property/ cap-sd-highspeed;
+	/delete-property/ clocks;
+	/delete-property/ clock-names;
+	/delete-property/ disable-wp;
+	/delete-property/ max-frequency;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-1;
+	/delete-property/ resets;
+	/delete-property/ reset-names;
+	/delete-property/ vmmc-supply;
+	/delete-property/ vqmmc-supply;
+	compatible = "ralink,mt7620-sdhci";
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdxc_pins>;
 	status = "okay";
-	broken-cd;            /* CD 引脚悬空, mainline 驱动 mmc_of_parse 读 */
-	no-1-8-v;             /* MT7688 SD 只 3.3V 信号, 禁止 UHS 1.8V 切换 (根因: signal voltage 1.8V 切换失败致卡 stuck) */
-	vqmmc-supply = <&mmc_reg_3v3>;  /* 信号电压改 3.3V, 覆盖 dtsi 的 mmc_reg_1v8 */
 };

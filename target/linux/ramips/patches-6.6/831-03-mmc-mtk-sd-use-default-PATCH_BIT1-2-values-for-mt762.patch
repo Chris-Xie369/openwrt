@@ -13,7 +13,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
-@@ -1780,9 +1780,11 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1753,9 +1753,11 @@ static void msdc_init_hw(struct msdc_hos
  	}
  	writel(0, host->base + MSDC_IOCON);
  	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 0);
