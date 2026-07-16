@@ -1,0 +1,35 @@
+#!/bin/sh
+# HLK-7688A first-boot setup: WiFi AP + 4G WAN (Quectel EC20 ECM) + SD f2fs.
+# Only runs on this board. Config mirrors the verified 22.03.5 setup, with the
+# ECM interface renamed eth1 on kernel 6.6 (was usb0 on 5.10); a hotplug script
+# re-points wan at whatever the ECM interface is actually named.
+
+[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "hilink,hlk-7688a" ] || exit 0
+
+# --- WiFi AP: open "OpenWrt" on lan (matches verified working config) ---
+uci set wireless.radio0.disabled='0'
+uci set wireless.default_radio0.network='lan'
+uci set wireless.default_radio0.mode='ap'
+uci set wireless.default_radio0.ssid='OpenWrt'
+uci set wireless.default_radio0.encryption='none'
+uci commit wireless
+
+# --- 4G WAN on EC20 ECM (dhcp). Device defaults to eth1 (6.6 cdc_ether);
+#     hotplug.d/net/20-ecm-wan corrects it if the interface is named differently. ---
+uci set network.wan.proto='dhcp'
+uci set network.wan.device='eth1'
+uci -q delete network.wan6
+uci commit network
+
+# --- SD card (mmcblk0p1, f2fs) auto-mount at /mnt/sd ---
+mkdir -p /mnt/sd
+uci set fstab.sd=mount
+uci set fstab.sd.target='/mnt/sd'
+uci set fstab.sd.device='/dev/mmcblk0p1'
+uci set fstab.sd.fstype='f2fs'
+uci set fstab.sd.options='rw,relatime'
+uci set fstab.sd.enabled='1'
+uci set fstab.sd.enabled_fsck='0'
+uci commit fstab
+
+exit 0

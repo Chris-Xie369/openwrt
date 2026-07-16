@@ -1,0 +1,20 @@
+#!/bin/sh
+# Point wan at the Quectel EC20 ECM interface when it appears.
+# The CDC ECM interface is named "eth1" on kernel 6.6 and "usb0" on 5.10;
+# this re-points wan to whichever name actually shows up.
+
+[ "$ACTION" = add ] || exit 0
+[ -e "/sys/class/net/$INTERFACE/device" ] || exit 0
+
+case "$(readlink -f "/sys/class/net/$INTERFACE/device")" in
+	*/usb*)
+		# USB-backed ethernet interface — the EC20 ECM port.
+		cur="$(uci -q get network.wan.device)"
+		[ "$cur" = "$INTERFACE" ] && exit 0
+		uci set network.wan.device="$INTERFACE"
+		uci commit network
+		ifup wan 2>/dev/null
+		;;
+esac
+
+exit 0

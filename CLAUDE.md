@@ -74,6 +74,33 @@ make target/linux/refresh        # 用 quilt 刷新已 apply 的 patch（交互�
 - `Checksum OK` = 镜像完整；`LZMA ERROR 1` 是解压环节问题，先查加载地址，别怀疑固件。
 - **绝不能用 U-Boot Option 2/5 烧 flash**：`raspi_erase` 长循环不喂看门狗，稳定在第 13 个 64KB block 复位（教训 #5）。持久化走**系统内 `mtd write`**（Linux 喂狗正常）。
 
+### 固件更新（持久化烧写）
+
+产物两种：`*-initramfs-kernel.bin`（RAM 调试/救砖，**不写 flash**）、`*-squashfs-sysupgrade.bin`（持久化，写 firmware 分区）。HLK-7688A 已是 OpenWrt（非原厂固件），**一律用 sysupgrade image 烧 flash**。
+
+**A) 日常更新（设备能正常启动）— sysupgrade（首选）**：
+```bash
+# 开发机：scp 传 sysupgrade image 到设备
+scp bin/targets/ramips/mt76x8/*-squashfs-sysupgrade.bin root@<设备IP>:/tmp/
+# 设备（从 flash 正常启动的系统）：
+sysupgrade /tmp/openwrt-ramips-mt76x8-hilink_hlk-7688a-squashfs-sysupgrade.bin   # 保留配置
+# 加 -n 不保留配置（全新安装）
+```
+initramfs 系统跑 sysupgrade 会报 `Cannot save config while running from ramdisk`（无 jffs2 overlay，正常）；从 flash 启动的系统跑才能保留配置。
+
+**B) sysupgrade 失败 / 底层写 — mtd write**：
+```bash
+mtd write /tmp/openwrt-ramips-mt76x8-hilink_hlk-7688a-squashfs-sysupgrade.bin firmware && reboot
+```
+
+**C) 救砖（设备启动不了，但 U-Boot 完好）— initramfs + mtd write**：
+```bash
+# U-Boot 串口：tftpboot 0x82000000 *-initramfs-kernel.bin && bootm 0x82000000
+# 进 initramfs 系统后：scp/tftp 把 sysupgrade image 传到 /tmp，再 mtd write firmware && reboot
+```
+
+**U-Boot Option 2/5 永远别用**（`raspi_erase` 不喂看门狗，擦空 firmware 变砖，教训 #5）。所有可靠路径都基于"Linux 喂狗正常"。
+
 ### 构建环境（2026-07-12 已恢复）
 
 之前 `rm -rf build_dir/target-*` 导致的损坏已恢复：package 产物（58 ipk）、opkg 工具、root.orig-ramips 均齐全，`make target/linux/install` 前置条件满足。教训仍有效：清缓存要**精准**，别 `rm -rf build_dir/target-*`（教训 #8）。全量内核编译（clean 后）> 10min，超后台 timeout，需多次续编或前台分步。

@@ -359,3 +359,68 @@ root@OpenWrt:~# ls /dev/mmc*
 2. **CMD48 SD ext reg 探测**（数据传输层）：6.6 内核新增 `mmc_sd_read_ext_regs`（SD 7.0），发 CMD48 读 512B → mtk-mmc DMA xfer_done 超时（-145）。5.10/22.03 无此函数。修复：`patches-6.6/1001` 清 `SD_SCR_CMD48_SUPPORT` 位跳过探测。
 
 **待办**（可选清理）：移除 debug patch（999/1000）产最终干净镜像；考虑持久化（sysupgrade 或 mtd write 烧 flash）。
+
+---
+
+# flash 启动 panic（2026-07-16，独立根因，已根治）
+
+SD 根治后尝试从 flash 持久化启动，kernel panic（`Cannot open root device ""`）。
+
+## 症状与铁证
+
+6.6 读 SPI 数据整体右移 1 bit——JEDEC 读成 `0x77a00c`，python 铁证 `hex(0xef4019>>1)=='0x77a00c'`（标准 W25Q256FV ID 是 `0xef4019`）。U-Boot / 22.03 / 修复后 6.6 都读 `0xef4019`。
+
+## 根因：误删 release 自带 002-03 patch
+
+commit `e034e3da4c`（SD 根治）误删了 v24.10.0 release 自带的 `patches-6.6/002-03`（v6.13 backport: add mmc/bbppll/sdhc clocks）。判断"002-03 对 SD 非必需"**正确**（SD 根因是 AGPIO_CFG），但漏了**全局副作用**：002-03 注册的 `bbppll` fixed clock(480MHz) 是让 mt76x8 clock onecell index 与 DTS 头文件（`mediatek,mtmips-sysc.h`，`MT76X8_CLK_SPI1=11`）对齐的关键。
+
+删 002-03 → 缺 bbppll → mt76x8 index 偏移 -2：
+
+1. DTS spi0 `clocks=<&sysc 11>`（=MT76X8_CLK_SPI1，应映射 SPI1 的 bus=193MHz）实际映射到 uart0 的 periph=40MHz
+2. spi-mt7621 `sys_freq=40M`（错，应 193M）
+3. `mt7621_spi_prepare`: `rate=DIV_ROUND_UP(40M,40M)=1→clamp 2`（应 5）
+4. 硬件 SPI = 真实 bus(193M)/2 ≈ 96.5MHz（超 W25Q256 标准 SPI 40MHz 上限 2.4 倍）→ 采样系统性偏移 → 右移1bit
+5. → mtdsplit 读 uImage header 错位 → firmware 未拆 → panic
+
+**为何只坏 SPI**：uart0/1/2 的 parent 都是 periph(40M)，index 偏移后仍拿 periph（rate 相同，无害）；唯独 SPI 该用 bus(193M)，偏移后拿 periph(40M)，rate 不同，致命。
+
+## 修复
+
+恢复 002-03（`git checkout e034e3da4c~1`）。应用后 index 对齐头文件：
+
+```
+xtal=0, cpu=1, bbppll=2, pcmi2s=3, periph=4, bus=5, sdhc=6, ..., spi1=11 ✓
+```
+
+→ hws[11]=SPI1/bus(193M) → sys_freq=193333333 → rate=5 → SPI 38.6MHz → 正常。
+
+另移除 `406-mtd-spi-nor-add-w25q256-clone.patch`——它基于采样错位的假象（以为芯片报 0x77a00c 是 clone，实为 6.6 SPI 采样错位读出的假数据）。标准路径读 0xef4019，clone 条目从未触发。
+
+## 验证（设备实测）
+
+- initramfs: `sys_freq 40000000→193333333`；JEDEC `0x77a00c→w25q256 (0xef4019)`
+- flash 实启: `2 uimage-fw partitions found`（mtdsplit 成功，panic 死点攻克）+ 进 OpenWrt shell
+- **SD 卡仍工作**（mmcblk0 116G）→ 002-03 恢复**不破坏 SD 根治**，双根治共存
+
+## 上游状态
+
+v24.10.0 release + openwrt-24.10 分支均含 002-03（上游无此 bug）。本 panic 是 e034e3da4c 误删引入的**本地回归**，无需提 issue/PR。
+
+**教训**：删 patch 前要查清它有无全局副作用——002-03 表面是"mmc clock"，实为整个 mt76x8 clock index 对齐的支柱，牵动 SPI flash 等所有用 bus clock 的设备。
+
+---
+
+# 迁移总结（22.03.5 → 24.10，2026-07-16 完成）
+
+HLK-7688A 从 22.03.5（内核 5.10）迁移到 24.10（内核 6.6.73）遇到的两个回归全部根治：
+
+| 问题 | 根因 | 修复 | 验证 |
+|------|------|------|------|
+| SD 卡零枚举 | AGPIO_CFG 缺失 + CMD48 探测（6.6 新增） | `files/sd.c` 加回 AGPIO_CFG + `1001` patch 清 SCR_CMD48 | mmcblk0 116GiB + p1 |
+| flash 启动 panic | 误删 002-03 → mt76x8 clock index 偏移 -2 | 恢复 002-03 + 移除 406 hack | flash 实启进系统 |
+
+两者都是本地回归 / 驱动差异，**非上游缺陷**。设备功能全绿：SD(f2fs) / SPI flash / WiFi AP(mt76) / 4G EC20 / USB / console / U-Boot。
+
+**24.10 在 HLK-7688A 完全可用**，本分支 `wip/24.10-sd-debug` 可作为生产基线。
+
+**固件更新方式**（详见 `CLAUDE.md`「固件更新」节）：日常走 `sysupgrade`；救砖走 initramfs + `mtd write`。**U-Boot Option 2/5 永远别用**（`raspi_erase` 不喂看门狗，擦空 firmware 变砖，教训 #5）。

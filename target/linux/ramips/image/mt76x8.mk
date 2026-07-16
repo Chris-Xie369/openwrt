@@ -273,7 +273,10 @@ define Device/hilink_hlk-7688a
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Hi-Link
   DEVICE_MODEL := HLK-7688A
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-sdhci-mt7620 \
+    kmod-mt76 wpad-basic-mbedtls \
+    kmod-usb-net-cdc-ether kmod-usb-serial kmod-usb-serial-option \
+    kmod-fs-f2fs f2fs-tools block-mount kmod-nls-cp437 kmod-nls-iso8859-1
 endef
 TARGET_DEVICES += hilink_hlk-7688a
 
