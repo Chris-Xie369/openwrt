@@ -276,7 +276,8 @@ define Device/hilink_hlk-7688a
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-sdhci-mt7620 \
     kmod-mt76 wpad-basic-mbedtls \
     kmod-usb-net-cdc-ether kmod-usb-serial kmod-usb-serial-option \
-    kmod-fs-f2fs f2fs-tools block-mount kmod-nls-cp437 kmod-nls-iso8859-1
+    kmod-fs-f2fs f2fs-tools block-mount kmod-nls-cp437 kmod-nls-iso8859-1 \
+    libpaho-mqtt-c libffmpeg-full libcurl libopenssl zlib libstdcpp libatomic
 endef
 TARGET_DEVICES += hilink_hlk-7688a
 
