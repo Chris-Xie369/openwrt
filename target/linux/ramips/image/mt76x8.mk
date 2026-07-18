@@ -278,7 +278,7 @@ define Device/hilink_hlk-7688a
     kmod-usb-net-cdc-ether kmod-usb-serial kmod-usb-serial-option \
     kmod-fs-f2fs f2fs-tools block-mount kmod-nls-cp437 kmod-nls-iso8859-1 \
     libpaho-mqtt-c libffmpeg-full libcurl libopenssl openssl-util zlib libstdcpp libatomic \
-    kmod-rt_rdm
+    kmod-rt_rdm gateway-deploy
 endef
 TARGET_DEVICES += hilink_hlk-7688a
 
