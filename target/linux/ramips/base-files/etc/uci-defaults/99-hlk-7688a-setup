@@ -21,15 +21,9 @@ uci set network.wan.device='eth1'
 uci -q delete network.wan6
 uci commit network
 
-# --- SD card (mmcblk0p1, f2fs) auto-mount at /mnt/sd ---
-mkdir -p /mnt/sd
-uci set fstab.sd=mount
-uci set fstab.sd.target='/mnt/sd'
-uci set fstab.sd.device='/dev/mmcblk0p1'
-uci set fstab.sd.fstype='f2fs'
-uci set fstab.sd.options='rw,relatime'
-uci set fstab.sd.enabled='1'
-uci set fstab.sd.enabled_fsck='0'
-uci commit fstab
+# --- SD card: 不自动挂载，让 gateway app 自己 mount /mnt/mmcblk0p1（f2fs）---
+# app MountProcess system("mount /dev/mmcblk0p1 /mnt/mmcblk0p1") 自动检测 f2fs
+# OpenWrt 自动挂 /mnt/sd 会占用设备，导致 app mount 失败 → 最简程序退出
+mkdir -p /mnt/mmcblk0p1
 
 exit 0
