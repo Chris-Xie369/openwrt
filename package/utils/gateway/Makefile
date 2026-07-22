@@ -12,7 +12,7 @@ PKG_VERSION:=1.0
 PKG_RELEASE:=1
 
 # Zero-copy: symlink PKG_BUILD_DIR to the external gateway source (untouched)
-USE_SOURCE_DIR:=/home/otn/bump-detect/gateway/huaweicloud-sdk20210107
+USE_SOURCE_DIR:=/home/otn/bump-detect/worktree/openwrt-24.10-port/gateway/huaweicloud-sdk20210107
 
 include $(INCLUDE_DIR)/package.mk
 

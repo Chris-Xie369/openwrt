@@ -36,8 +36,8 @@ HEADER_PATH="-I$STAGING/usr/include $INC"
 LIB_PATH="-L$STAGING/usr/lib"
 LIBS="$LIB_PATH -Wl,-rpath-link,$STAGING/usr/lib -lpaho-mqtt3as -lssl -lcrypto -lz -lswresample -lswscale -lavformat -lavutil -lavcodec -lrt -lm -lcurl -lpthread -latomic"
 
-cd /home/otn/bump-detect/gateway/huaweicloud-sdk20210107
-echo "=== branch: $(git -C /home/otn/bump-detect rev-parse --abbrev-ref HEAD) ==="
+cd /home/otn/bump-detect/worktree/openwrt-24.10-port/gateway/huaweicloud-sdk20210107
+echo "=== branch: $(git -C /home/otn/bump-detect/worktree/openwrt-24.10-port rev-parse --abbrev-ref HEAD) ==="
 echo "=== cleaning & building app ==="
 make clean || true
 make all \
