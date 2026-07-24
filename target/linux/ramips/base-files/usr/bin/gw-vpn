@@ -1,0 +1,31 @@
+#!/bin/sh
+# GW VPN 启动脚本：从 /opt/data/params.json 提 SN（GW 开头），生成凭证，启 openvpn
+# 用法：gw-vpn [start|stop]   start（默认）生成凭证+后台启 openvpn；stop 停止
+PARAMS=/opt/data/params.json
+VPN_LOGIN=/home/config/vpn_login.conf
+OVPN=/etc/openvpn/client.ovpn
+VPN_PASS='12345678'   # 统一初始密码（服务器端以 SN 建账号）
+
+case "${1:-start}" in
+  stop)
+    killall openvpn 2>/dev/null
+    echo "openvpn stopped"
+    exit 0
+    ;;
+esac
+
+# 提取 SN（params.json 的 mqtt_info.username 里 GW 开头那段，如 ..._GW2024032309）
+[ -f "$PARAMS" ] || { echo "错误：$PARAMS 不存在"; exit 1; }
+SN=$(grep -o 'GW[0-9]*' "$PARAMS" | head -1)
+[ -n "$SN" ] || { echo "错误：未从 $PARAMS 提取到 SN（GW 开头）"; exit 1; }
+
+# 生成凭证（用户名=SN，密码=统一初始密码）
+mkdir -p /home/config
+printf '%s\n%s\n' "$SN" "$VPN_PASS" > "$VPN_LOGIN"
+chmod 600 "$VPN_LOGIN"
+echo "SN=$SN，凭证写入 $VPN_LOGIN"
+
+# 启动 openvpn（如已在跑先停）
+killall openvpn 2>/dev/null
+openvpn --config "$OVPN" --auth-user-pass "$VPN_LOGIN" >/tmp/openvpn.log 2>&1 &
+echo "openvpn 后台启动，日志 /tmp/openvpn.log（tail -f 查看）"

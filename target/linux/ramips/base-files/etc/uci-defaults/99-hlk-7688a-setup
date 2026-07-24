@@ -6,13 +6,13 @@
 
 [ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "hilink,hlk-7688a" ] || exit 0
 
-# --- WiFi AP: WPA2 + 稳定性优化（deep-research wtyzz0tqp：HT20 / channel auto / psk2）
+# --- WiFi AP: WPA2 + 稳定性优化（deep-research wtyzz0tqp：HT20 / channel / psk2）
 #     14.10 WiFi 失效根因 = mt7603 驱动持续 TX bug，24.10 已修(mt76-2025.01.14)。
-#     稳定性靠 HT20(3 非重叠信道/降干扰) + channel auto(自适应各安装点环境) + WPA2-AES(硬件加速)。---
+#     HT20(3 非重叠信道/降干扰)；channel=11 固定（auto 在 mt7603 ACS 不可靠，实测总落拥堵的 1）。---
 uci set wireless.radio0.disabled='0'
 uci set wireless.radio0.country='CN'
 uci set wireless.radio0.htmode='HT20'
-uci set wireless.radio0.channel='auto'
+uci set wireless.radio0.channel='11'
 uci set wireless.default_radio0.network='lan'
 uci set wireless.default_radio0.mode='ap'
 uci set wireless.default_radio0.ssid='OpenWrt'
@@ -34,6 +34,8 @@ uci commit system
 
 # --- 4G WAN on EC20 ECM (dhcp). Device defaults to eth1 (6.6 cdc_ether);
 #     hotplug.d/net/20-ecm-wan corrects it if the interface is named differently. ---
+# LAN br-lan IP：默认 192.168.1.1 → 192.168.8.1
+uci set network.lan.ipaddr='192.168.8.1'
 uci set network.wan.proto='dhcp'
 uci set network.wan.device='eth1'
 uci -q delete network.wan6
