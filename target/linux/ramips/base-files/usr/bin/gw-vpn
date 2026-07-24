@@ -25,7 +25,7 @@ printf '%s\n%s\n' "$SN" "$VPN_PASS" > "$VPN_LOGIN"
 chmod 600 "$VPN_LOGIN"
 echo "SN=$SN，凭证写入 $VPN_LOGIN"
 
-# 启动 openvpn（如已在跑先停）
+# 启动 openvpn（如已在跑先停）；OPENSSL_CONF 启 legacy provider 让 BF-CBC 可用
 killall openvpn 2>/dev/null
-openvpn --config "$OVPN" --auth-user-pass "$VPN_LOGIN" >/tmp/openvpn.log 2>&1 &
+OPENSSL_CONF=/etc/openvpn/openssl-legacy.cnf openvpn --config "$OVPN" --auth-user-pass "$VPN_LOGIN" >/tmp/openvpn.log 2>&1 &
 echo "openvpn 后台启动，日志 /tmp/openvpn.log（tail -f 查看）"

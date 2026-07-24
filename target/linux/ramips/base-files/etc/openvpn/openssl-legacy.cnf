@@ -1,0 +1,16 @@
+# OpenVPN 专用 OpenSSL 配置：启用 legacy provider（含 BF-CBC，连老 iKuai 服务器）
+# 由 gw-vpn 通过 OPENSSL_CONF 环境变量加载，不影响系统其他 openssl 用途
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+
+[default_sect]
+activate = 1
+
+[legacy_sect]
+activate = 1
