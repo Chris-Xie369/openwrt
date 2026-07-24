@@ -28,6 +28,10 @@ if [ -n "$HASH" ]; then
 	rm -f /tmp/.shadow.new
 fi
 
+# --- 串口 console 也要密码（默认 ttylogin 未设 → login.sh 走 /bin/login -f root 免密；设 1 走正常 login 要密码）---
+uci set system.@system[0].ttylogin='1'
+uci commit system
+
 # --- 4G WAN on EC20 ECM (dhcp). Device defaults to eth1 (6.6 cdc_ether);
 #     hotplug.d/net/20-ecm-wan corrects it if the interface is named differently. ---
 uci set network.wan.proto='dhcp'
