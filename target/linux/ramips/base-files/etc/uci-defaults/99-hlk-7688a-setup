@@ -50,6 +50,50 @@ uci set firewall.vpn.input='ACCEPT'
 uci set firewall.vpn.output='ACCEPT'
 uci set firewall.vpn.forward='ACCEPT'
 uci add_list firewall.vpn.device='tun0'
+# vpn → lan forwarding：让 VPN 主机直接访问 LAN 摄像机（192.168.8.x，网页/RTSP/录像全端口）
+uci -q delete firewall.vpn_lan 2>/dev/null
+uci set firewall.vpn_lan='forwarding'
+uci set firewall.vpn_lan.src='vpn'
+uci set firewall.vpn_lan.dest='lan'
+
+# uhttpd 监听改 :1234（LuCI 释放 :80；局域网+VPN 都用 :1234 访问 LuCI）
+uci -q delete uhttpd.main.listen_http
+uci add_list uhttpd.main.listen_http='0.0.0.0:1234'
+uci commit uhttpd
+
+# 端口映射（局域网 + VPN 一致：gateway:80 = 车牌相机，gateway:1234 = LuCI）
+# 车牌相机网页：:80 → 192.168.8.222:80（lan + vpn 都映射）
+uci -q delete firewall.cam_lpr_lan 2>/dev/null
+uci set firewall.cam_lpr_lan='redirect'
+uci set firewall.cam_lpr_lan.name='车牌相机网页(lan)'
+uci set firewall.cam_lpr_lan.src='lan'
+uci set firewall.cam_lpr_lan.src_dport='80'
+uci set firewall.cam_lpr_lan.dest='lan'
+uci set firewall.cam_lpr_lan.dest_ip='192.168.8.222'
+uci set firewall.cam_lpr_lan.dest_port='80'
+uci set firewall.cam_lpr_lan.proto='tcp'
+uci set firewall.cam_lpr_lan.target='DNAT'
+uci -q delete firewall.cam_lpr_vpn 2>/dev/null
+uci set firewall.cam_lpr_vpn='redirect'
+uci set firewall.cam_lpr_vpn.name='车牌相机网页(vpn)'
+uci set firewall.cam_lpr_vpn.src='vpn'
+uci set firewall.cam_lpr_vpn.src_dport='80'
+uci set firewall.cam_lpr_vpn.dest='lan'
+uci set firewall.cam_lpr_vpn.dest_ip='192.168.8.222'
+uci set firewall.cam_lpr_vpn.dest_port='80'
+uci set firewall.cam_lpr_vpn.proto='tcp'
+uci set firewall.cam_lpr_vpn.target='DNAT'
+# 球机网页：:221 → 192.168.8.221:80（VPN；局域网直接 8.221:80）
+uci -q delete firewall.cam_dome 2>/dev/null
+uci set firewall.cam_dome='redirect'
+uci set firewall.cam_dome.name='球机网页'
+uci set firewall.cam_dome.src='vpn'
+uci set firewall.cam_dome.src_dport='221'
+uci set firewall.cam_dome.dest='lan'
+uci set firewall.cam_dome.dest_ip='192.168.8.221'
+uci set firewall.cam_dome.dest_port='80'
+uci set firewall.cam_dome.proto='tcp'
+uci set firewall.cam_dome.target='DNAT'
 uci commit firewall
 
 # --- SD card: 不自动挂载，让 gateway app 自己 mount /mnt/mmcblk0p1（f2fs）---
