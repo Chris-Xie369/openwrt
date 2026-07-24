@@ -6,13 +6,27 @@
 
 [ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "hilink,hlk-7688a" ] || exit 0
 
-# --- WiFi AP: open "OpenWrt" on lan (matches verified working config) ---
+# --- WiFi AP: WPA2 + 稳定性优化（deep-research wtyzz0tqp：HT20 / channel auto / psk2）
+#     14.10 WiFi 失效根因 = mt7603 驱动持续 TX bug，24.10 已修(mt76-2025.01.14)。
+#     稳定性靠 HT20(3 非重叠信道/降干扰) + channel auto(自适应各安装点环境) + WPA2-AES(硬件加速)。---
 uci set wireless.radio0.disabled='0'
+uci set wireless.radio0.country='CN'
+uci set wireless.radio0.htmode='HT20'
+uci set wireless.radio0.channel='auto'
 uci set wireless.default_radio0.network='lan'
 uci set wireless.default_radio0.mode='ap'
 uci set wireless.default_radio0.ssid='OpenWrt'
-uci set wireless.default_radio0.encryption='none'
+uci set wireless.default_radio0.encryption='psk2'
+uci set wireless.default_radio0.key='1234567*'
 uci commit wireless
+
+# --- root 统一密码（串口/SSH/LuCI；busybox 无 chpasswd → openssl passwd 生成 hash 写 shadow）---
+HASH=$(openssl passwd -6 '*123654*A' 2>/dev/null)
+if [ -n "$HASH" ]; then
+	awk -F: -v OFS=: -v h="$HASH" '$1=="root"{$2=h} {print}' /etc/shadow > /tmp/.shadow.new
+	cat /tmp/.shadow.new > /etc/shadow
+	rm -f /tmp/.shadow.new
+fi
 
 # --- 4G WAN on EC20 ECM (dhcp). Device defaults to eth1 (6.6 cdc_ether);
 #     hotplug.d/net/20-ecm-wan corrects it if the interface is named differently. ---
