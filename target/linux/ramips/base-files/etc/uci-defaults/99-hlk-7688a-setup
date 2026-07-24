@@ -41,6 +41,17 @@ uci set network.wan.device='eth1'
 uci -q delete network.wan6
 uci commit network
 
+# --- OpenVPN tun0 firewall zone（让 VPN 主机能 SSH/ping gateway 的 tun0 IP）---
+# tun0 默认不在任何 firewall zone，入站被 REJECT；建 vpn zone input ACCEPT
+uci -q delete firewall.vpn 2>/dev/null
+uci set firewall.vpn='zone'
+uci set firewall.vpn.name='vpn'
+uci set firewall.vpn.input='ACCEPT'
+uci set firewall.vpn.output='ACCEPT'
+uci set firewall.vpn.forward='ACCEPT'
+uci add_list firewall.vpn.device='tun0'
+uci commit firewall
+
 # --- SD card: 不自动挂载，让 gateway app 自己 mount /mnt/mmcblk0p1（f2fs）---
 # app MountProcess system("mount /dev/mmcblk0p1 /mnt/mmcblk0p1") 自动检测 f2fs
 # OpenWrt 自动挂 /mnt/sd 会占用设备，导致 app mount 失败 → 最简程序退出
