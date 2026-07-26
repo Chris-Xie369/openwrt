@@ -39,6 +39,16 @@ uci set network.lan.ipaddr='192.168.8.1'
 uci set network.wan.proto='dhcp'
 uci set network.wan.device='eth1'
 uci -q delete network.wan6
+
+# port 0 改 LAN（HLK-7688A 唯一 RJ45 默认是 WAN/VLAN2；改 LAN/VLAN1 接相机/PC；
+# 4G WAN 走 eth1 不受影响。遍历 switch_vlan 按 ports 内容识别 LAN/WAN）
+for sv in $(uci -q show network 2>/dev/null | grep '=switch_vlan' | cut -d. -f2 | cut -d= -f1); do
+	p=$(uci -q get network.$sv.ports)
+	case "$p" in
+		*"1 2 3 4"*) uci set network.$sv.ports='0 1 2 3 4 6t' ;;   # LAN VLAN 加 port 0
+		*"0 6t"*)    uci set network.$sv.ports='6t' ;;              # WAN VLAN 去 port 0（eth0.2 无物理口，闲置）
+	esac
+done
 uci commit network
 
 # --- OpenVPN tun0 firewall zone（让 VPN 主机能 SSH/ping gateway 的 tun0 IP）---
