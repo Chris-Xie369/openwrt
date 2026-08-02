@@ -20,7 +20,7 @@ define Package/monitor
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Gateway monitor daemon (MQTT heartbeat + watchdog)
-  DEPENDS:=+libpaho-mqtt-c +libopenssl +zlib +libcurl +libpthread
+  DEPENDS:=+libpaho-mqtt-c +libopenssl +zlib +libcurl +libpthread +libstdcpp +libubox +libuci
   PKGARCH:=mipsel_24kc
 endef
 
@@ -36,7 +36,8 @@ MONITOR_INC := \
 	-I./inc/third_party/cjson/ -I./inc/third_party/posix/ \
 	-I./inc/http -I./inc/iota/base -I./inc/iota/agentlite \
 	-I./inc/iota/service -I./inc/iota/protocol -I./inc/iota/conn \
-	-I./inc/periph -I./inc/common -I./inc/file \
+	-I./inc/periph -I./inc/common -I./inc/video -I./inc/ftp -I./inc/file \
+	-I./inc/lora -I./inc/dtu \
 	-I./inc/third_party/sm4/ -I./inc/monitor -I./inc
 
 # Cleaned LIBS: dropped -lpolarssl (dead, no API calls) and -lpwrapper (pwrapper.c self-impl)
@@ -52,8 +53,8 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) all \
 		CC="$(TARGET_CC)" \
 		CXX="$(TARGET_CXX)" \
-		CFLAGS="$(TARGET_CFLAGS) -std=c99 -fPIC -fsigned-char -ffunction-sections -fdata-sections -w" \
-		CXXFLAGS="$(TARGET_CXXFLAGS) -std=c++11 -fPIC -fexceptions -fsigned-char -ffunction-sections -fdata-sections -w" \
+		CFLAGS="$(TARGET_CFLAGS) -std=c99 -fPIC -fsigned-char -ffunction-sections -fdata-sections -w -include stdint.h -include errno.h -include string.h -D_GNU_SOURCE" \
+		CXXFLAGS="$(TARGET_CXXFLAGS) -std=c++11 -fPIC -fexceptions -fsigned-char -ffunction-sections -fdata-sections -w -include stdint.h -include errno.h -include string.h -D_GNU_SOURCE" \
 		HEADER_PATH="-I$(STAGING_DIR)/usr/include $(MONITOR_INC)" \
 		LIB_PATH="-L$(STAGING_DIR)/usr/lib" \
 		LIBS="$(MONITOR_LIBS)"
