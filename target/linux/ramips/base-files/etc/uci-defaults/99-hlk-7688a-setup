@@ -111,4 +111,21 @@ uci commit firewall
 # OpenWrt 自动挂 /mnt/sd 会占用设备，导致 app mount 失败 → 最简程序退出
 mkdir -p /mnt/mmcblk0p1
 
+# --- 时区 CST（UTC+8，Asia/Shanghai）---
+uci set system.@system[0].timezone='CST-8'
+uci set system.@system[0].zonename='Asia/Shanghai'
+uci commit system
+
+# --- crontab：gateway app 守护（dec.bin 每分钟）+ NTP 同步（每 10 分钟阿里云）---
+# sysntpd 固件默认 disabled 不冲突；busybox crond 默认 disabled 需手动 enable
+# monitor（C 二进制）注释——未移植 24.10(uClibc→musl)，待移植后取消注释
+mkdir -p /etc/crontabs
+cat > /etc/crontabs/root << 'CRONEOF'
+# */2 * * * * monitor  # TODO: monitor 未移植 24.10，待移植后取消注释
+* * * * * /home/bump_detect/dec.bin
+*/10 * * * * ntpd -gq -p ntp.aliyun.com
+CRONEOF
+/etc/init.d/cron enable
+/etc/init.d/cron start
+
 exit 0
