@@ -1,0 +1,15 @@
+{
+	"ftp":	"1",
+	"mqtt":	"1",
+	"ivs":	"1",
+	"bridge":	"0",
+	"soft_dog":	"0",
+	"sub_camera":	"1",
+	"main_camera":	"1",
+	"bump_prediction":	"0",
+	"sd_card":	"1",
+	"http":	"1",
+	"ptz_ctrl":	"0",
+	"sub_g":	"1",
+	"ews":	"0"
+}

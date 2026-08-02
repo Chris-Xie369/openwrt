@@ -1,0 +1,12 @@
+{
+  "mqtt_info": {
+    "serverIp": "58.210.34.82",
+    "port": 2031,
+    "sub_prj_id": "600fa3b19a002602d44d1ae2",
+    "username": "600f76189a002602d44cb024_GW2024032309",
+    "app_key": "dbeb185f121d4937be0a1c88c6e76b97",
+    "app_secret": "T6ca0X1C36HGWMnpvMyBV4fpW2EIlCMk",
+    "sm4_key": "CQ4C7eXHaPW9xWBJ",
+    "http_server": "58.210.34.82:2007/mqtt"
+  }
+}

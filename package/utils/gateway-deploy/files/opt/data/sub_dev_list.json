@@ -1,0 +1,23 @@
+{
+	"times":	60,
+	"once_duration":	5,
+	"simulation_event_time":	604800,
+	"app":	{
+		"upgrade":	0,
+		"version":	"V.1.0.2"
+	},
+	"firmware":	{
+		"upgrade":	0,
+		"version":	"v1.0.2"
+	},
+	"lora":	{
+		"lora_switch":	0,
+		"addr":	103,
+		"ch":	11
+	},
+	"quantity":	1,
+	"sub_dev_list":	{
+		"dev[0]":	"SEN2024032309,8,8,8,1200,0"
+	},
+	"sub_product_id":	"600fa3b19a002602d44d1ae2"
+}

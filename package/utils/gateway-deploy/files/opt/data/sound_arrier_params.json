@@ -1,0 +1,11 @@
+
+		    {
+		    	"sound_barrier_swtich":"0",
+		        "data_len": "100",
+		        "data_timeout": "60",
+		        "tcp_server_ip": "192.168.8.172",
+		        "tcp_server_port": "6789",
+		        "serial_dev": "/dev/ttyS2",
+		        "serial_port_baud_rate": "115200"
+		    }
+	    

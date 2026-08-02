@@ -1,0 +1,23 @@
+{
+	"fw_version":	"V1.0",
+	"hw_version":	"V1.0",
+	"app_version":	"simple_app_2.1_20250911",
+	"reboot":	"2021-06-11 18:11:34",
+	"upgrade":	"2024011216490",
+	"location":	"1",
+	"points_info":	"3",
+	"sampling_period":	"14400",
+	"cpu_board":	"MT7688A",
+	"memory":	"128M",
+	"emmc":	"32M",
+	"net":	"5G-quectel-GM",
+	"direction":	"E",
+	"video_length":	"30,90",
+	"ssid":	"GW2023112737",
+	"light_mode":	"1",
+	"sensor_mode":	"0",
+	"lora_ch":	2,
+	"lora_addr":	370,
+	"light_switch":	"OFF",
+	"strk_hold_status":	"OFF"
+}

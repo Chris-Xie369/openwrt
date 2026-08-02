@@ -1,0 +1,13 @@
+{
+	"quantity":	2,
+	"product":	{
+		"prod[0]":	{
+			"type":	"SEN",
+			"id":	"600fa3b19a002602d44d1ae2"
+		},
+		"prod[1]":	{
+			"type":	"ALT",
+			"id":	"6385cbec379b9f2424723d8d"
+		}
+	}
+}
