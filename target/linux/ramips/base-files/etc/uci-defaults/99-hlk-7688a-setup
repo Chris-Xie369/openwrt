@@ -121,7 +121,7 @@ uci commit system
 # monitor（C 二进制）注释——未移植 24.10(uClibc→musl)，待移植后取消注释
 mkdir -p /etc/crontabs
 cat > /etc/crontabs/root << 'CRONEOF'
-# */2 * * * * monitor  # TODO: monitor 未移植 24.10，待移植后取消注释
+*/2 * * * * monitor
 * * * * * /home/bump_detect/dec.bin
 */10 * * * * ntpd -gq -p ntp.aliyun.com
 CRONEOF
