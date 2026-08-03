@@ -31,11 +31,15 @@ define Build/Compile
 endef
 
 define Package/gateway-deploy/install
-	$(INSTALL_DIR) $(1)/home/bump_detect $(1)/home/config $(1)/opt/data
+	$(INSTALL_DIR) $(1)/home/bump_detect $(1)/home/config $(1)/home/config/monitor $(1)/opt/data
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dec.bin $(1)/home/bump_detect/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/app_enc_tar $(1)/home/bump_detect/
 	$(INSTALL_DATA) $(CURDIR)/files/home/config/* $(1)/home/config/
 	$(INSTALL_DATA) $(CURDIR)/files/opt/data/* $(1)/opt/data/
+	$(INSTALL_DATA) $(CURDIR)/files/opt/data/params.json $(1)/home/config/monitor/params.json
+	$(INSTALL_DATA) $(CURDIR)/files/home/config/ca.pem $(1)/home/config/monitor/ca.pem
+	$(INSTALL_DATA) $(CURDIR)/files/home/config/emqx.pem $(1)/home/config/monitor/emqx.pem
+	$(INSTALL_DATA) $(CURDIR)/files/home/config/emqx.key $(1)/home/config/monitor/emqx.key
 endef
 
 $(eval $(call BuildPackage,gateway-deploy))
