@@ -43,7 +43,7 @@ GATEWAY_LIBS := \
 	-L$(STAGING_DIR)/usr/lib \
 	-lpaho-mqtt3as -lssl -lcrypto -lz \
 	-lswresample -lswscale -lavformat -lavutil -lavcodec \
-	-lrt -lm -lcurl -lpthread
+	-lrt -lm -lcurl -lpthread -latomic
 
 define Build/Compile
 	# Remove stale artifacts from any prior (old toolchain) build in the source dir
@@ -53,8 +53,8 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) all \
 		CC="$(TARGET_CC)" \
 		CXX="$(TARGET_CXX)" \
-		CFLAGS="$(TARGET_CFLAGS) -std=c99 -fPIC -fsigned-char -ffunction-sections -fdata-sections -w" \
-		CXXFLAGS="$(TARGET_CXXFLAGS) -std=c++11 -fPIC -fexceptions -fsigned-char -ffunction-sections -fdata-sections -w" \
+		CFLAGS="$(TARGET_CFLAGS) -std=c99 -fPIC -fsigned-char -ffunction-sections -fdata-sections -w -D_GNU_SOURCE" \
+		CXXFLAGS="$(TARGET_CXXFLAGS) -std=c++11 -fPIC -fexceptions -fsigned-char -ffunction-sections -fdata-sections -w -D_GNU_SOURCE" \
 		HEADER_PATH="-I$(STAGING_DIR)/usr/include $(GATEWAY_INC)" \
 		LIB_PATH="-L$(STAGING_DIR)/usr/lib" \
 		LIBS="$(GATEWAY_LIBS)"
