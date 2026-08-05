@@ -63,6 +63,8 @@ endef
 define Package/monitor/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/monitor $(1)/usr/bin/monitor
+	cd $(PKG_BUILD_DIR) && tar czf monitor.tar.gz monitor
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/monitor.tar.gz $(1)/usr/bin/monitor.tar.gz
 endef
 
 $(eval $(call BuildPackage,monitor))
