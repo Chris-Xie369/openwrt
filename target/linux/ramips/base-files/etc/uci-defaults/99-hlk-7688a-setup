@@ -116,6 +116,9 @@ uci set system.@system[0].timezone='CST-8'
 uci set system.@system[0].zonename='Asia/Shanghai'
 uci commit system
 
+# --- 系统版本（gateway app GetSystemVersion 从此文件读 "Release" 字符串上报 MQTT LOGIN）---
+echo 'Release_24.10.0_r28427-6df0e3d02a' > /etc/config/sys_version
+
 # --- crontab：gateway app 守护（dec.bin 每分钟）+ NTP 同步（每 10 分钟阿里云）---
 # sysntpd 固件默认 disabled 不冲突；busybox crond 默认 disabled 需手动 enable
 # monitor（C 二进制）注释——未移植 24.10(uClibc→musl)，待移植后取消注释
